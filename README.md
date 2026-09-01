@@ -39,8 +39,9 @@ no accounts, no servers, no telemetry.
   line-precise validation — built for AI-assisted authoring (see
   [AI policy](AI_POLICY.md) and the
   [scene-authoring skill](.claude/skills/skybox-scenes/SKILL.md)).
-- **Export**: 512–4096/face cube-face PNG zip, equirectangular PNG, Radiance
-  `.hdr`, OpenEXR; per-layer and star-data exports; deterministic batch
+- **Export**: 512–4096/face cube-face PNG or Half-Float OpenEXR zip,
+  equirectangular PNG, Radiance `.hdr`, OpenEXR; per-layer and star-data
+  exports; deterministic batch
   variation zips.
 - **Legacy compatible**: imports original Spacescape `.xml` saves
   (MSVC `rand()` LCG + exact Perlin port). Saves are plain `.zip` bundles

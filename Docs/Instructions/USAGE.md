@@ -85,7 +85,8 @@ generate or transform skyboxes, then paste the result back.
   preview). **Open** accepts `.zip` (and legacy `.sspj`), plain scene `.json`, and original
   Spacescape `.xml` saves.
 - **Export** — bake the skybox at 512–4096 px/face:
-  - cube faces (PNG zip) or a single equirectangular PNG
+  - cube faces (PNG or linear Half-Float OpenEXR zip) or a single
+    equirectangular PNG
   - Radiance `.hdr` (e.g. Unreal TextureCube) and OpenEXR (e.g. Godot
     `PanoramaSkyMaterial`), both HDR-capable
   - per-layer faces + a fully flattened composite, plus star positions as

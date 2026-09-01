@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { EXRExporter } from 'three/addons/exporters/EXRExporter.js';
+import { halfFloatToExr } from '../export/exporter';
 import { halfBufferToFloat } from '../export/hdr';
 import type { StarData } from '../export/perLayer';
 import { filterBillboards, generateBillboards, type Billboards } from '../core/billboards';
@@ -1311,8 +1312,10 @@ export class PreviewScene {
     wantEquirect: boolean,
     wantExr = false,
     wantFaces = true,
+    wantFaceExr = false,
   ): Promise<{
     faces: Float32Array[];
+    faceExrs?: Uint8Array[];
     equirect?: { width: number; height: number; data: Float32Array };
     exr?: Uint8Array;
   }> {
@@ -1362,11 +1365,13 @@ export class PreviewScene {
     cam.update(this.renderer, bakeScene);
 
     const faces: Float32Array[] = [];
-    if (wantFaces) {
+    const faceExrs: Uint8Array[] | undefined = wantFaceExr ? [] : undefined;
+    if (wantFaces || wantFaceExr) {
       for (let face = 0; face < 6; face++) {
         const buf = new Uint16Array(size * size * 4);
         this.renderer.readRenderTargetPixels(rt, 0, 0, size, size, buf, face);
-        faces.push(halfBufferToFloat(buf));
+        if (wantFaceExr) faceExrs!.push(await halfFloatToExr(buf, size, size));
+        if (wantFaces) faces.push(halfBufferToFloat(buf));
       }
     }
 
@@ -1411,7 +1416,7 @@ export class PreviewScene {
       eqMat.dispose();
     }
 
-    return { faces, equirect, exr };
+    return { faces, faceExrs, equirect, exr };
     } finally {
       // GPU resources must go even when a readback/EXR step throws
       this.bhCaptureSize = prevCapture;

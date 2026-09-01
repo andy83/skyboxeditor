@@ -38,7 +38,7 @@ await page.locator('.viewport canvas').screenshot({ path: 'sky.png' }); // live 
   inspector/workbench (controls.tsx wires htmlFor); export-panel checkboxes
   have NO label association — use
   `.locator('.export-panel input[type=checkbox]').nth(i)`
-  (order: faces, equirect, hdr, exr, per-layer).
+  (order: face PNG, face EXR, equirect PNG, HDR, equirect EXR, per-layer).
 - Downloads: `page.waitForEvent('download')` then `download.saveAs(...)`,
   unzip and probe contents with node.
 

@@ -51,6 +51,8 @@ export function starDataCsv(d: StarData): string {
 export interface ImageRefs {
   /** 6 cube face PNGs in GL order posx negx posy negy posz negz */
   faces?: string[];
+  /** 6 linear Half-Float OpenEXRs in the same order as faces */
+  faceExrs?: string[];
   /** equirect PNG */
   image?: string;
   imageHdr?: string;

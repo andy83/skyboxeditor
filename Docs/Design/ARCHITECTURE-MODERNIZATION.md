@@ -132,8 +132,8 @@ composite below them. This also cleanly maps to engines: in Godot/UE the lens
 effect exports as a screen-space or sky-shader distortion using the same math.
 
 ### Phase 4 — Export
-- Composited skybox: 6 face PNGs at 512–4096 (zip download), single cross-layout
-  PNG, equirect PNG.
+- Composited skybox: 6 face PNGs or linear Half-Float OpenEXRs at 512–4096
+  (zip download), single cross-layout PNG, equirect PNG.
 - HDR: float render targets (`EXT_color_buffer_float`, universal on desktop
   WebGL2) → EXR via three.js `EXRExporter`, or RGBE `.hdr`.
 - **Per-layer asset export** — each layer already renders to its own cube RTT, so

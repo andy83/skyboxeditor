@@ -5,7 +5,7 @@ import { importLegacyXml, fromJsonString } from './core/io';
 import { defaultLayer, type Layer, type LayerType } from './core/layers';
 import { manifestEntry, variantLayers, type VariationManifestEntry } from './export/batch';
 import { compositeEntry, compositeJson, layerFileStem, starDataCsv, starDataJson, type ImageRefs } from './export/perLayer';
-import { FACE_NAMES, downloadBlob, floatToPngBlob, packageFacesZip } from './export/exporter';
+import { FACE_NAMES, downloadBlob, floatToPngBlob, packageFaceExrsZip, packageFacesZip } from './export/exporter';
 import { encodeRadianceHdr } from './export/hdr';
 import { strToU8, zipSync } from 'fflate';
 import { buildProjectBundle, mimeForFileName, openProjectBundle } from './export/projectBundle';
@@ -61,6 +61,7 @@ export default function App() {
   const [exportOpen, setExportOpen] = useState(false);
   const [exportSize, setExportSize] = useState(1024);
   const [exportFaces, setExportFaces] = useState(true);
+  const [exportFaceExr, setExportFaceExr] = useState(false);
   const [exportEquirect, setExportEquirect] = useState(true);
   const [exportExr, setExportExr] = useState(false);
   const [exportHdr, setExportHdr] = useState(false);
@@ -306,12 +307,13 @@ export default function App() {
     for (let k = 0; k < count; k++) {
       setBatchProgress(`${k + 1}/${count}`);
       const vLayers = variantLayers(visibleLayers, k);
-      const { faces, equirect, exr } = await scene.bakeExport(
+      const { faces, faceExrs, equirect, exr } = await scene.bakeExport(
         vLayers,
         exportSize,
         exportEquirect || exportHdr,
         exportExr,
         exportFaces,
+        exportFaceExr,
       );
       const tag = `v${String(k + 1).padStart(2, '0')}`;
       if (exportFaces) {
@@ -319,6 +321,11 @@ export default function App() {
           const blob = await floatToPngBlob(faces[i], exportSize, exportSize);
           entries[`${tag}/${presetName}_${FACE_NAMES[i]}.png`] =
             new Uint8Array(await blob.arrayBuffer());
+        }
+      }
+      if (exportFaceExr && faceExrs) {
+        for (let i = 0; i < 6; i++) {
+          entries[`${tag}/${presetName}_${FACE_NAMES[i]}.exr`] = faceExrs[i];
         }
       }
       if (exportEquirect && equirect) {
@@ -387,6 +394,14 @@ export default function App() {
           refs.faces.push(path);
         }
       }
+      if (exportFaceExr && bake.faceExrs) {
+        refs.faceExrs = [];
+        for (let f = 0; f < 6; f++) {
+          const path = `${prefix}/${FACE_NAMES[f]}.exr`;
+          entries[path] = bake.faceExrs[f];
+          refs.faceExrs.push(path);
+        }
+      }
       if (exportEquirect && bake.equirect) {
         const blob = await floatToPngBlob(bake.equirect.data, bake.equirect.width, bake.equirect.height);
         refs.image = `${prefix}/equirect.png`;
@@ -414,7 +429,9 @@ export default function App() {
       const stem = layerFileStem(layer, i);
       // a distortion layer solo-baked has nothing below it to bend — skip its image
       if (layer.type !== 'blackhole') {
-        const bake = await scene.bakeExport([layer], exportSize, wantEquirect, exportExr, exportFaces);
+        const bake = await scene.bakeExport(
+          [layer], exportSize, wantEquirect, exportExr, exportFaces, exportFaceExr,
+        );
         Object.assign(composite[i], await writeImages(`layers/${stem}`, bake));
       }
       const data = await scene.layerStarData(layer);
@@ -434,7 +451,9 @@ export default function App() {
 
     // fully baked / flattened cubemap of the whole stack
     setBatchProgress('composite');
-    const flattened = await scene.bakeExport(visibleLayers, exportSize, wantEquirect, exportExr, exportFaces);
+    const flattened = await scene.bakeExport(
+      visibleLayers, exportSize, wantEquirect, exportExr, exportFaces, exportFaceExr,
+    );
     const compositeRefs = await writeImages('composite', flattened);
 
     entries['composite.json'] = strToU8(
@@ -469,17 +488,24 @@ export default function App() {
         setExportOpen(false);
         return;
       }
-      const { faces, equirect, exr } = await scene.bakeExport(
+      const { faces, faceExrs, equirect, exr } = await scene.bakeExport(
         visibleLayers,
         exportSize,
         exportEquirect || exportHdr,
         exportExr,
         exportFaces,
+        exportFaceExr,
       );
       if (exportFaces) {
         downloadBlob(
           `${presetName}-${exportSize}-faces.zip`,
           await packageFacesZip(faces, exportSize, presetName),
+        );
+      }
+      if (exportFaceExr && faceExrs) {
+        downloadBlob(
+          `${presetName}-${exportSize}-faces-exr.zip`,
+          packageFaceExrsZip(faceExrs, presetName),
         );
       }
       if (exportEquirect && equirect) {
@@ -669,10 +695,15 @@ export default function App() {
               </select>
             </div>
             <div className="field-row">
-              <label>Cube faces (.zip)</label>
+              <label>Cube faces PNG (.zip)</label>
               <input type="checkbox" checked={exportFaces} onChange={(e) => setExportFaces(e.target.checked)} />
             </div>
             <div className="fmt-engines">Unity 6-sided skybox · Unreal cubemap · source-style engines</div>
+            <div className="field-row">
+              <label title="Linear Half-Float OpenEXR">Cube faces EXR (.zip)</label>
+              <input type="checkbox" checked={exportFaceExr} onChange={(e) => setExportFaceExr(e.target.checked)} />
+            </div>
+            <div className="fmt-engines">HDR cubemaps · DCC tools · lossless values above 1.0</div>
             <div className="field-row">
               <label>Equirect (.png)</label>
               <input type="checkbox" checked={exportEquirect} onChange={(e) => setExportEquirect(e.target.checked)} />
@@ -715,7 +746,7 @@ export default function App() {
             <button
               type="button"
               className="export-go"
-              disabled={exporting || (!exportFaces && !exportEquirect && !exportHdr && !exportExr)}
+              disabled={exporting || (!exportFaces && !exportFaceExr && !exportEquirect && !exportHdr && !exportExr)}
               onClick={() => void runExport()}
             >
               {exporting
