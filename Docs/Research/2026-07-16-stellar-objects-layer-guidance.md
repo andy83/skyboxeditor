@@ -1284,7 +1284,7 @@ Use solid-angle-aware sampling near the poles. Do not generate content directly 
 
 | Output            | Implemented form                                                                          | Intended consumer/use                                                     |
 | ----------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| Cubemap PNG       | six vertically flipped PNG faces in a ZIP: `posx`, `negx`, `posy`, `negy`, `posz`, `negz` | generic face-based import; engine orientation still requires verification |
+| Cubemap PNG       | six GL-row-oriented PNG faces in a ZIP: `posx`, `negx`, `posy`, `negy`, `posz`, `negz` | generic face-based import; engine orientation still requires verification |
 | Panorama PNG      | 2:1 equirectangular PNG                                                                   | LDR preview/general use                                                   |
 | Radiance HDR      | linear RGBE `.hdr`, equirectangular                                                       | primary Unreal Engine 5.8 path as a TextureCube                           |
 | OpenEXR           | linear half-float `.exr`, equirectangular                                                 | primary Godot 4 path through `PanoramaSkyMaterial`                        |
@@ -1292,7 +1292,7 @@ Use solid-angle-aware sampling near the poles. Do not generate content directly 
 
 Selectable cube-face resolution is 512–4096 pixels. A 4096-per-face bake produces an 8192×4096 equirectangular panorama, conventionally described as 8K. Native 16K panorama output is outside launch scope.
 
-The face order is OpenGL/Three.js `+X, -X, +Y, -Y, +Z, -Z`, with each face readback vertically flipped before PNG encoding. Equirectangular forward is `-Z`, up is `+Y`, and longitude increases toward `+X`. HDR and EXR values are linear. The current PNG path clamps linear values directly to bytes; its intended transfer function/color-space treatment must be documented or corrected before claiming color-managed output.
+The face order is OpenGL/Three.js `+X, -X, +Y, -Y, +Z, -Z`, with each face preserving the GL readback row order for direct cubemap upload. Equirectangular forward is `-Z`, up is `+Y`, and longitude increases toward `+X`. HDR and EXR values are linear. The current PNG path clamps linear values directly to bytes; its intended transfer function/color-space treatment must be documented or corrected before claiming color-managed output.
 
 ### 14.5 Bake-sidecar metadata: current versus desired
 
@@ -1577,7 +1577,7 @@ Require desktop WebGL2, `EXT_color_buffer_float`, and `MAX_CUBE_MAP_TEXTURE_SIZE
 
 The implemented outputs are:
 
-* six vertically flipped PNG cube faces in a ZIP named `posx`, `negx`, `posy`, `negy`, `posz`, and `negz`;
+* six GL-row-oriented PNG cube faces in a ZIP named `posx`, `negx`, `posy`, `negy`, `posz`, and `negz`;
 * 2:1 equirectangular PNG;
 * equirectangular Radiance RGBE `.hdr`, primarily for Unreal Engine 5.8;
 * equirectangular half-float OpenEXR `.exr`, primarily for Godot 4;
@@ -1619,7 +1619,7 @@ Persist a generator/schema version and implement explicit preset migrations befo
 
 Target consumers are Unreal Engine 5.8 and Godot 4. Prefer equirectangular Radiance `.hdr` for Unreal TextureCube import and equirectangular `.exr` for Godot `PanoramaSkyMaterial`, reducing cube-face orientation ambiguity.
 
-The generic six-face export currently uses OpenGL/Three.js order `+X, -X, +Y, -Y, +Z, -Z` and vertically flips each readback. Equirectangular mapping uses forward `-Z`, up `+Y`, and increasing longitude toward `+X`. HDR/EXR values are linear. PNG currently clamps linear values directly to bytes; document or correct the transfer function. Engine-specific orientation profiles and real import tests remain required. Product references: `src/render/noiseGlsl.ts:295`, `src/export/exporter.ts:1`, `docs/MODERNIZATION.md:152`.
+The generic six-face export currently uses OpenGL/Three.js order `+X, -X, +Y, -Y, +Z, -Z` and preserves each face's GL readback row order. Equirectangular mapping uses forward `-Z`, up `+Y`, and increasing longitude toward `+X`. HDR/EXR values are linear. PNG currently clamps linear values directly to bytes; document or correct the transfer function. Engine-specific orientation profiles and real import tests remain required. Product references: `src/render/noiseGlsl.ts:295`, `src/export/exporter.ts:1`, `docs/MODERNIZATION.md:152`.
 
 ## Appendix D. Remaining Production Gaps
 

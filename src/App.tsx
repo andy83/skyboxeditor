@@ -5,7 +5,14 @@ import { importLegacyXml, fromJsonString } from './core/io';
 import { defaultLayer, type Layer, type LayerType } from './core/layers';
 import { manifestEntry, variantLayers, type VariationManifestEntry } from './export/batch';
 import { compositeEntry, compositeJson, layerFileStem, starDataCsv, starDataJson, type ImageRefs } from './export/perLayer';
-import { FACE_NAMES, downloadBlob, floatToPngBlob, packageFaceExrsZip, packageFacesZip } from './export/exporter';
+import {
+  FACE_NAMES,
+  downloadBlob,
+  floatCubeFaceToPngBlob,
+  floatToPngBlob,
+  packageFaceExrsZip,
+  packageFacesZip,
+} from './export/exporter';
 import { encodeRadianceHdr } from './export/hdr';
 import { strToU8, zipSync } from 'fflate';
 import { buildProjectBundle, mimeForFileName, openProjectBundle } from './export/projectBundle';
@@ -318,7 +325,7 @@ export default function App() {
       const tag = `v${String(k + 1).padStart(2, '0')}`;
       if (exportFaces) {
         for (let i = 0; i < 6; i++) {
-          const blob = await floatToPngBlob(faces[i], exportSize, exportSize);
+          const blob = await floatCubeFaceToPngBlob(faces[i], exportSize, exportSize);
           entries[`${tag}/${presetName}_${FACE_NAMES[i]}.png`] =
             new Uint8Array(await blob.arrayBuffer());
         }
@@ -388,7 +395,7 @@ export default function App() {
       if (exportFaces) {
         refs.faces = [];
         for (let f = 0; f < 6; f++) {
-          const blob = await floatToPngBlob(bake.faces[f], exportSize, exportSize);
+          const blob = await floatCubeFaceToPngBlob(bake.faces[f], exportSize, exportSize);
           const path = `${prefix}/${FACE_NAMES[f]}.png`;
           entries[path] = new Uint8Array(await blob.arrayBuffer());
           refs.faces.push(path);

@@ -12,9 +12,11 @@ names remain `posx`, `negx`, `posy`, `negy`, `posz`, `negz`.
 
 - Read each requested face once from the existing `WebGLCubeRenderTarget` into
   a `Uint16Array`.
-- Wrap that bottom-up half-float readback in a `THREE.DataTexture` and let the
-  existing Three.js `EXRExporter` perform its normal row reordering and encode
-  Half-Float OpenEXR output.
+- Preserve the raw GL row order for cube-face files. PNG faces write the
+  readback without the normal 2D-image flip; EXR faces pre-flip the
+  `THREE.DataTexture` input to cancel the `EXRExporter` row reordering. This
+  keeps file row zero on the cubemap face's negative-t edge for consumers that
+  upload decoded pixels unchanged.
 - Encode faces sequentially so EXR-only export never retains six uncompressed
   `Float32Array` faces. Preserve the existing Float32/PNG path when PNG faces
   are also requested.
@@ -41,7 +43,20 @@ names remain `posx`, `negx`, `posy`, `negy`, `posz`, `negz`.
 - `deep-field` (`hdrMultiplier` up to 2.4) exported six 4096×4096 Half-Float
   EXRs with decoded values up to 3.95703.
 - At 512×512, decoded EXR faces and PNG faces matched pixel-for-pixel after
-  their normal file row mappings, confirming identical face orientation.
+  their cubemap file row mappings, confirming identical face orientation.
 - Repeated bakes produced byte-identical EXR entries after unzipping.
 - Normal, batch, per-layer/composite, and existing equirectangular PNG/HDR/EXR
   exports were exercised through the built application.
+
+## Orientation follow-up
+
+An Atmospace import of a 4096-face EXR export exposed that the original
+implementation applied a normal top-down 2D-image flip to every cube face.
+That reflects the cubemap across Y: its seams make `posy` and `negy` appear
+swapped even though Three.js `CubeCamera` renders the canonical face indices
+`+X`, `-X`, `+Y`, `-Y`, `+Z`, `-Z`.
+
+The cube-face PNG and EXR paths now preserve canonical GL face-row orientation;
+equirectangular PNG/EXR/HDR exports retain their normal top-down 2D-image
+orientation. A directional WebGL2 probe and the original exported face edges
+confirmed the distinction.
