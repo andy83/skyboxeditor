@@ -40,7 +40,8 @@ added, completed, blocked, materially descoped, or superseded.
   scene-lock button (drags always pan, quads not grabbable), two-finger
   pinch zoom on the viewport (continuous FOV, OrbitControls-safe).
 - **E10 — Cube-face OpenEXR export** ✅ Existing half-float HDR cubemaps export
-  as six canonical EXR faces across normal, per-layer, and batch exports.
+  as six canonical, GL-row-oriented EXR faces across normal, per-layer, and
+  batch exports.
   [Plans/2026-09-01-prd-cubemap-face-exr-export.md](Plans/2026-09-01-prd-cubemap-face-exr-export.md)
 
 ## In progress / next

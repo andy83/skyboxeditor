@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { floatToBytes } from './hdr';
 import {
   FACE_NAMES,
+  halfFloatCubeFaceToExr,
   halfFloatToExr,
   packageFaceExrsZip,
   rgbaBottomUpToTopDown,
@@ -88,5 +89,29 @@ describe('cube face EXR export', () => {
       floatToBytes(decoded.data), 2, SIZE,
     );
     expect(exrTopDown).toEqual(pngTopDown);
+  });
+
+  it('keeps cubemap readback rows in canonical GL face orientation', async () => {
+    const half = new Uint16Array(2 * SIZE * 4);
+    const floats = new Float32Array(half.length);
+    for (let y = 0; y < SIZE; y++) {
+      for (let x = 0; x < 2; x++) {
+        const i = (y * 2 + x) * 4;
+        const rgba = y < SIZE / 2
+          ? [1, x, 0, 1]
+          : [0, x, 1, 1];
+        for (let c = 0; c < 4; c++) {
+          floats[i + c] = rgba[c];
+          half[i + c] = THREE.DataUtils.toHalfFloat(rgba[c]);
+        }
+      }
+    }
+
+    const originalHalf = half.slice();
+    const decoded = decodeExr(await halfFloatCubeFaceToExr(half, 2, SIZE));
+    expect(floatToBytes(decoded.data)).toEqual(
+      rgbaBottomUpToTopDown(floatToBytes(floats), 2, SIZE),
+    );
+    expect(half).toEqual(originalHalf);
   });
 });
