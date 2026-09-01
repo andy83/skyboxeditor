@@ -53,6 +53,13 @@ describe('composite manifest', () => {
     expect(parsed.layers[1].texture).toBeDefined();
     expect(parsed.layers[0].texture).toBeUndefined();
   });
+
+  it('preserves optional cube-face EXR references', () => {
+    const entry = compositeEntry(defaultLayer('noise', 'HDR Nebula'), 0);
+    entry.faceExrs = ['posx.exr', 'negx.exr', 'posy.exr', 'negy.exr', 'posz.exr', 'negz.exr'];
+    const parsed = JSON.parse(compositeJson({ preset: 'p', faceSize: 4096 }, [entry]));
+    expect(parsed.layers[0].faceExrs).toEqual(entry.faceExrs);
+  });
 });
 
 describe('layerFileStem', () => {

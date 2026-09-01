@@ -39,6 +39,9 @@ added, completed, blocked, materially descoped, or superseded.
   floating toggle; slide-in drawer overlay below 760px, starts collapsed),
   scene-lock button (drags always pan, quads not grabbable), two-finger
   pinch zoom on the viewport (continuous FOV, OrbitControls-safe).
+- **E10 — Cube-face OpenEXR export** ✅ Existing half-float HDR cubemaps export
+  as six canonical EXR faces across normal, per-layer, and batch exports.
+  [Plans/2026-09-01-prd-cubemap-face-exr-export.md](Plans/2026-09-01-prd-cubemap-face-exr-export.md)
 
 ## In progress / next
 
